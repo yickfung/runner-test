@@ -1,0 +1,59 @@
+name: Build1
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest]
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: "recursive"
+
+      - uses: actions/cache@v4
+        id: local_cache
+        with:
+          path: /tmp/local
+          key: ${{ runner.os }}-${{ hashFiles('./build1.sh') }}
+      
+      - name: build deps
+        if: steps.local_cache.outputs.cache-hit != 'true'
+        run: |
+          ./build1.sh
+
+      - name: init python
+        run: |
+          tar zxf Python-3.8.18.tgz
+
+      - name: build python
+        run: |
+          LOCAL_PREFIX="/tmp/local"
+          export PATH="$LOCAL_PREFIX/bin:$PATH"
+          export LDFLAGS="-L$LOCAL_PREFIX/lib"
+          export CFLAGS=" -I$LOCAL_PREFIX/include"
+          export CPPFLAGS="$CFLAGS"
+          export CXXFLAGS="$CFLAGS"
+          export PKG_CONFIG_PATH="$LOCAL_PREFIX/lib/pkgconfig"
+          cd Python-3.8.18
+          ./configure --prefix=/tmp/python3.8.18
+          make && make install
+
+      - name: Upload /tmp/local
+        uses: actions/upload-artifact@v3
+        with:
+          name: local
+          path: /tmp/local
+
+      - name: Upload /tmp/python3.8.18
+        uses: actions/upload-artifact@v3
+        with:
+          name: python3.8.18
+          path: /tmp/python3.8.18
