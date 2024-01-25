@@ -14,7 +14,8 @@ cd ..
 rm -rf openssl-1.1.1u
 tar zxf openssl-1.1.1u.tar.gz
 cd openssl-1.1.1u
-./Configure darwin64-x86_64-cc --prefix=$LOCAL_PREFIX -shared
+# ./Configure darwin64-x86_64-cc --prefix=$LOCAL_PREFIX -shared
+./Configure darwin64-arm64-cc --prefix=$LOCAL_PREFIX -shared
 make && make install
 cd ..
 

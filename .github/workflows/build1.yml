@@ -9,7 +9,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest]
+        # platform: [macos-latest]
+        platform: [flyci-macos-large-latest-m1]
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -46,14 +47,16 @@ jobs:
           ./configure --prefix=/tmp/python3.8.18
           make && make install
 
-      - name: Upload /tmp/local
-        uses: actions/upload-artifact@v3
-        with:
-          name: local
-          path: /tmp/local
+      - name: zip files
+        run: |
+          zip -r local /tmp/local
+          zip -r python38 /tmp/python3.8.18
+          ls
 
-      - name: Upload /tmp/python3.8.18
-        uses: actions/upload-artifact@v3
+      - name: upload files
+        uses: actions/upload-artifact@v4
         with:
-          name: python3.8.18
-          path: /tmp/python3.8.18
+          name: python-files
+          path: |
+            local.zip
+            python38.zip
