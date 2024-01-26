@@ -10,7 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         # platform: [macos-latest]
-        platform: [flyci-macos-large-latest-m1]
+        platform: [flyci-macos-large-12-m1]
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -33,66 +33,66 @@ jobs:
           path: /tmp/local
           key: ${{ steps.local_cache.outputs.cache-primary-key }}
 
-      - uses: actions/cache/restore@v4
-        id: local_x86_cache
-        with:
-          path: /tmp/local_x86
-          key: ${{ runner.os }}-${{ hashFiles('./build1_x86.sh') }}
-      - name: build deps
-        if: steps.local_x86_cache.outputs.cache-hit != 'true'
-        run: |
-          arch -x86_64 ./build1_x86.sh
-      - uses: actions/cache/save@v4
-        with:
-          path: /tmp/local_x86
-          key: ${{ steps.local_x86_cache.outputs.cache-primary-key }}
+      # - uses: actions/cache/restore@v4
+      #   id: local_x86_cache
+      #   with:
+      #     path: /tmp/local_x86
+      #     key: ${{ runner.os }}-${{ hashFiles('./build1_x86.sh') }}
+      # - name: build deps
+      #   if: steps.local_x86_cache.outputs.cache-hit != 'true'
+      #   run: |
+      #     arch -x86_64 ./build1_x86.sh
+      # - uses: actions/cache/save@v4
+      #   with:
+      #     path: /tmp/local_x86
+      #     key: ${{ steps.local_x86_cache.outputs.cache-primary-key }}
 
-      - name: prepare deps
-        run: |
-          LOCAL_PREFIX=/tmp/local
-          LOCAL_X86_PREFIX=/tmp/local_x86
-          cd "$LOCAL_PREFIX"
-          find ./ -type f \( -name "*.a" -or -name "*.dylib" -or -perm +111 \) | while read -r f; do
-              if file "$f" | grep -q "Mach-O"; then
-                  if [ -f "$LOCAL_X86_PREFIX/$f" ]; then
-                      lipo "$f" "$LOCAL_X86_PREFIX/$f" -create -output "${f}.universal"
-                      mv "${f}.universal" "$f"
-                      echo "MERGED: $f"
-                  else
-                      echo "WARNING: x86-64 binary not found: $f"
-                  fi
-              fi
-          done
+      # - name: prepare deps
+      #   run: |
+      #     LOCAL_PREFIX=/tmp/local
+      #     LOCAL_X86_PREFIX=/tmp/local_x86
+      #     cd "$LOCAL_PREFIX"
+      #     find ./ -type f \( -name "*.a" -or -name "*.dylib" -or -perm +111 \) | while read -r f; do
+      #         if file "$f" | grep -q "Mach-O"; then
+      #             if [ -f "$LOCAL_X86_PREFIX/$f" ]; then
+      #                 lipo "$f" "$LOCAL_X86_PREFIX/$f" -create -output "${f}.universal"
+      #                 mv "${f}.universal" "$f"
+      #                 echo "MERGED: $f"
+      #             else
+      #                 echo "WARNING: x86-64 binary not found: $f"
+      #             fi
+      #         fi
+      #     done
 
-      - name: init python
-        run: |
-          tar zxf Python-3.8.18.tgz
+      # - name: init python
+      #   run: |
+      #     tar zxf Python-3.8.18.tgz
 
-      - name: build python
-        run: |
-          LOCAL_PREFIX="/tmp/local"
-          export PATH="$LOCAL_PREFIX/bin:$PATH"
-          export LDFLAGS="-L$LOCAL_PREFIX/lib"
-          export CFLAGS=" -I$LOCAL_PREFIX/include"
-          export CPPFLAGS="$CFLAGS"
-          export CXXFLAGS="$CFLAGS"
-          export PKG_CONFIG_PATH="$LOCAL_PREFIX/lib/pkgconfig"
-          cd Python-3.8.18
-          ./configure --prefix=/tmp/python3.8.18 --enable-universalsdk --with-universal-archs=universal2
-          make && make install
+      # - name: build python
+      #   run: |
+      #     LOCAL_PREFIX="/tmp/local"
+      #     export PATH="$LOCAL_PREFIX/bin:$PATH"
+      #     export LDFLAGS="-L$LOCAL_PREFIX/lib"
+      #     export CFLAGS=" -I$LOCAL_PREFIX/include"
+      #     export CPPFLAGS="$CFLAGS"
+      #     export CXXFLAGS="$CFLAGS"
+      #     export PKG_CONFIG_PATH="$LOCAL_PREFIX/lib/pkgconfig"
+      #     cd Python-3.8.18
+      #     # ./configure --prefix=/tmp/python3.8.18 --enable-universalsdk --with-universal-archs=universal2
+      #     ./configure --prefix=/tmp/python3.8.18
+      #     make && make install
 
-      - name: zip files
-        run: |
-          zip -r local /tmp/local
-          zip -r local_x86 /tmp/local_x86
-          zip -r python38 /tmp/python3.8.18
-          ls
+      # - name: zip files
+      #   run: |
+      #     zip -r local /tmp/local
+      #     # zip -r local_x86 /tmp/local_x86
+      #     zip -r python38 /tmp/python3.8.18
+      #     ls
 
-      - name: upload files
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-files
-          path: |
-            local.zip
-            local_x86.zip
-            python38.zip
+      # - name: upload files
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: python-files
+      #     path: |
+      #       local.zip
+      #       python38.zip
