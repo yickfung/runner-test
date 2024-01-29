@@ -10,7 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         # platform: [macos-latest]
-        platform: [flyci-macos-large-12-m1]
+        platform: [flyci-macos-large-latest-m1]
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -18,20 +18,35 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: "recursive"
-
-      - uses: actions/cache/restore@v4
-        id: local_cache
-        with:
-          path: /tmp/local
-          key: ${{ runner.os }}-${{ hashFiles('./build1.sh') }}
-      - name: build deps
-        if: steps.local_cache.outputs.cache-hit != 'true'
+      
+      - name: upgrade pip
         run: |
-          ./build1.sh
-      - uses: actions/cache/save@v4
+          rm -rf python
+          unzip -q python3.8.18.20240126m1.zip
+          ./python/bin/python3 -m pip install --upgrade setuptools
+          ./python/bin/python3 -m pip install --upgrade pip
+          zip -r python38 ./python
+
+      - name: upload files
+        uses: actions/upload-artifact@v4
         with:
-          path: /tmp/local
-          key: ${{ steps.local_cache.outputs.cache-primary-key }}
+          name: python
+          path: |
+            python38.zip
+
+      # - uses: actions/cache/restore@v4
+      #   id: local_cache
+      #   with:
+      #     path: /tmp/local
+      #     key: ${{ runner.os }}-${{ hashFiles('./build1.sh') }}
+      # - name: build deps
+      #   if: steps.local_cache.outputs.cache-hit != 'true'
+      #   run: |
+      #     ./build1.sh
+      # - uses: actions/cache/save@v4
+      #   with:
+      #     path: /tmp/local
+      #     key: ${{ steps.local_cache.outputs.cache-primary-key }}
 
       # - uses: actions/cache/restore@v4
       #   id: local_x86_cache
